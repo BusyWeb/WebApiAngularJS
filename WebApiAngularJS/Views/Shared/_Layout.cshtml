@@ -1,0 +1,213 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </button>
+                @Html.ActionLink("Web Api AngularJS Demo", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Home", "Index", "Home", new { area = "" }, null)</li>
+                    <li>@Html.ActionLink("API", "Index", "Help", new { area = "" }, null)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container body-content" ng-app="appModule" ng-controller="appController">
+        @RenderBody()
+
+        <div class="container" style="margin-bottom: 80px;">
+
+            <h3>Device List</h3>
+
+            <div class="btn btn-success" ng-click="load()">Reload Devices</div>
+
+            <div class="well" style="padding: 16px; margin-top: 20px;">
+
+                <table ng-cloak>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>&nbsp;</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="item in deviceList">
+                            <td>{{ item.Id }}</td>
+                            <td>{{ item.Name }}</td>
+                            <td>
+                                <button class="btn btn-warning"
+                                        ng-model="$scope.device"
+                                        ng-click="edit(deviceList[$index])">
+                                    EDIT
+                                </button>
+                            </td>
+                            <td>
+                                <button class="btn btn-danger"
+                                        ng-model="$scope.device"
+                                        ng-click="delete($index)">
+                                    DELETE
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+
+            <div ng-show="device.Id != ''" class="well" style="padding: 16px; margin-top: 20px;">
+                <div><h4>Update Device</h4></div>
+                <div>
+                    <label for="Id">ID</label>:&nbsp;&nbsp;&nbsp;<label data-ng-bind="device.Id"></label>
+                </div>
+                <div>
+                    <label for="Name">NAME</label>:
+                    <input type="text" data-ng-model="device.Name" />
+                </div>
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-default" data-ng-click="cancelUpdate()">CANCEL</button>
+                    &nbsp;&nbsp;
+                    <button class="btn btn-danger" data-ng-click="update()">UPDATE</button>
+                </div>
+            </div>
+
+            <div ng-hide="device.Id != ''" class="well" style="padding: 16px; margin-top: 20px;">
+                <div><h4>Add Device</h4></div>
+                <div>
+                    <label for="Name">NAME</label>:
+                    <input type="text" data-ng-model="device.Name" />
+                </div>
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-default" data-ng-click="clear()">CLEAR</button>
+                    &nbsp;&nbsp;
+                    <button class="btn btn-danger" data-ng-click="add()">ADD DEVICE</button>
+                </div>
+            </div>
+
+
+        </div>
+
+        <footer>
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/angular")
+    @RenderSection("scripts", required: false)
+
+
+    <style type="text/css">
+        td {
+            padding: 4px;
+        }
+        th {
+            min-width: 40px;
+        }
+    </style>
+
+    <script type="text/javascript">
+
+            var app = angular.module('appModule', []);
+
+            app.controller('appController', function ($scope, $http) {
+
+                $scope.device = { Id: '', Name: '' };
+                $scope.deviceList = null;
+                $scope.clear = function () {
+                    $scope.device.Id = '';
+                    $scope.device.Name = '';
+                };
+
+                $scope.cancel = function () {
+                    $scope.clear();
+                };
+
+                $scope.load = function () {
+                    $http({
+                        method: 'GET',
+                        url: 'api/Values/Reload'
+                    }).then (function successCallback(response) {
+                        $scope.deviceList = response.data;
+                        $scope.clear();
+                    }, function errorCallback(response) {
+                        alert("Error: " + response.data.ExceptionMessage);
+                    });
+                };
+
+                $scope.load();
+
+                $scope.edit = function (item) {
+                    $scope.device = { Id: item.Id, Name: item.Name };
+                };
+
+                $scope.delete = function (index) {
+                    $http({
+                        method: 'DELETE',
+                        url: 'api/Values/' + $scope.deviceList[index].Id
+                    }).then(function successCallback(response) {
+                        $scope.deviceList = response.data;
+                        $scope.clear();
+                    }, function errorCallback(response) {
+                        alert("Error: " + response.data.ExceptionMessage);
+                    });
+                };
+
+                $scope.add = function () {
+                    if ($scope.device.Name != "") {
+                        $http({
+                            method: 'POST',
+                            url: 'api/Values/Post',
+                            data: $scope.device
+                        }).then (function successCallback(response) {
+                            $scope.deviceList = response.data;
+                            $scope.clear;
+                        }, function errorCallback(response) {
+                            alert("Error: " + response.data.ExceptionMessage);
+                        });
+                    } else {
+                        alert("Device name is required!");
+                    };
+                };
+
+                $scope.update = function () {
+                    if ($scope.device.Name != "") {
+                        $http({
+                            method: 'PUT',
+                            url: 'api/Values/' + $scope.device.Id,
+                            data: $scope.device
+                        }).then(function successCallback(response) {
+                            $scope.deviceList = response.data;
+                            $scope.clear;
+                        }, function errorCallback(response) {
+                            alert("Error: " + response.data.ExceptionMessage);
+                        });
+                    } else {
+                        alert("Device name is required!");
+                    };
+                };
+            });
+
+    </script>
+
+
+</body>
+</html>
